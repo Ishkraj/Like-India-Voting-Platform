@@ -22,15 +22,14 @@ mongoose.connect(process.env.MONGO_URI)
 
 // --- NODEMAILER SETUP ---
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: process.env.EMAIL_PORT || 587,
-  secure: process.env.EMAIL_PORT == 465,
+  host: 'smtp-relay.brevo.com', // Gmail hata kar Brevo laga diya
+  port: 2525, // Render ka bypass port
+  secure: false, // 2525 ke liye false hota hai
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   }
 });
-
 // --- UPLOADS SETUP (For Images) ---
 if (!fs.existsSync('./uploads')) {
   fs.mkdirSync('./uploads');
