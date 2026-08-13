@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom'; // <-- 1. Ye add kiya
 
 export default function CreateCompetition() {
+  const navigate = useNavigate(); // <-- 2. Ye add kiya
+  
   const [competitionName, setCompetitionName] = useState('');
   const [isCustom, setIsCustom] = useState(false);
   const [customName, setCustomName] = useState('');
@@ -41,7 +44,7 @@ export default function CreateCompetition() {
     const formData = new FormData();
     formData.append('competitionName', finalName);
     formData.append('numParticipants', numParticipants);
-    // userId add kar lena agar state me hai, example ke liye placeholder hai
+    // userId add kar liya hai localStorage se
     formData.append('userId', localStorage.getItem('userId'));
 
     participants.forEach((p, i) => {
@@ -55,6 +58,7 @@ export default function CreateCompetition() {
     try {
       await axios.post('https://like-india-voting-platform.onrender.com/api/add-competition', formData);
       alert('Competition created successfully!');
+      navigate('/home'); // <-- 3. Ye add kiya (ab direct home pe jayega)
     } catch (err) {
       console.error(err);
       alert('Error creating competition');
