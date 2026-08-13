@@ -22,7 +22,7 @@ export default function VotingDashboard() {
   const fetchCompetitionData = async () => {
     const userId = localStorage.getItem('userId');
     try {
-      const res = await axios.get(`http://localhost:5000/api/competitions/${id}`);
+      const res = await axios.get(`https://like-india-voting-platform.onrender.com/api/competitions/${id}`);
       
       if (res.data.createdBy !== userId) {
         setModalMessage("⚠️ Ye competition aapka nahi hai!");
@@ -59,7 +59,7 @@ export default function VotingDashboard() {
     try {
       const rankedIds = ranked.map(p => p._id);
 
-      await axios.post('http://localhost:5000/api/vote', {
+      await axios.post('https://like-india-voting-platform.onrender.com/api/vote', {
         competitionId: id,
         rankedParticipants: rankedIds
       });

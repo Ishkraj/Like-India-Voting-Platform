@@ -26,7 +26,7 @@ export default function Login() {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) return alert("Passwords do not match!");
     try {
-      await axios.post('http://localhost:5000/api/signup', {
+      await axios.post('https://like-india-voting-platform.onrender.com/api/signup', {
         username: formData.username,
         email: formData.email,
         password: formData.password
@@ -42,7 +42,7 @@ export default function Login() {
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/verify-signup', { email: formData.email, otp });
+      await axios.post('https://like-india-voting-platform.onrender.com/api/verify-signup', { email: formData.email, otp });
       alert("Account verified! Jai Hind. Please login now.");
       setShowOtp(false);
       setIsLogin(true);
@@ -56,7 +56,7 @@ export default function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:5000/api/login', {
+      const res = await axios.post('https://like-india-voting-platform.onrender.com/api/login', {
         username: formData.username,
         password: formData.password
       });

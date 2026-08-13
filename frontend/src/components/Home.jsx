@@ -18,7 +18,7 @@ export default function Home() {
     const userId = localStorage.getItem('userId');
     if (!userId) return;
     try {
-      const res = await axios.get(`http://localhost:5000/api/competitions?userId=${userId}`);
+      const res = await axios.get(`https://like-india-voting-platform.onrender.com/api/competitions?userId=${userId}`);
       setCompetitions(res.data);
     } catch (err) {
       console.error(err);
@@ -41,15 +41,15 @@ export default function Home() {
 
     try {
       if (modalType === 'edit') {
-        await axios.post(`http://localhost:5000/api/verify-user-password`, { userId, password: inputPassword });
+        await axios.post(`https://like-india-voting-platform.onrender.com/api/verify-user-password`, { userId, password: inputPassword });
         setModalOpen(false);
         navigate(`/edit/${selectedCompId}`);
       } 
       else if (modalType === 'end') {
-        const verifyRes = await axios.post(`http://localhost:5000/api/verify-user-password`, { userId, password: inputPassword });
+        const verifyRes = await axios.post(`https://like-india-voting-platform.onrender.com/api/verify-user-password`, { userId, password: inputPassword });
         
         if (verifyRes.status === 200) {
-          await axios.post(`http://localhost:5000/api/end-voting/${selectedCompId}`);
+          await axios.post(`https://like-india-voting-platform.onrender.com/api/end-voting/${selectedCompId}`);
           
           setModalOpen(false);
           fetchCompetitions();
@@ -60,12 +60,12 @@ export default function Home() {
         }
       } 
       else if (modalType === 'vote') {
-        await axios.post(`http://localhost:5000/api/verify-user-password`, { userId, password: inputPassword });
+        await axios.post(`https://like-india-voting-platform.onrender.com/api/verify-user-password`, { userId, password: inputPassword });
         setModalOpen(false);
         navigate(`/vote/${selectedCompId}`);
       }
       else if (modalType === 'results') {
-        await axios.post(`http://localhost:5000/api/verify-admin`, { password: inputPassword });
+        await axios.post(`https://like-india-voting-platform.onrender.com/api/verify-admin`, { password: inputPassword });
         setModalOpen(false);
         navigate(`/results/${selectedCompId}`);
       }

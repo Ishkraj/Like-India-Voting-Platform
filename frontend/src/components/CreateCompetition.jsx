@@ -52,7 +52,7 @@ export default function CreateCompetition() {
     });
 
     try {
-      await axios.post('http://localhost:5000/api/add-competition', formData, {
+      await axios.post('https://like-india-voting-platform.onrender.com/api/add-competition', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       alert('Competition and Participants added successfully! Jai Hind!');

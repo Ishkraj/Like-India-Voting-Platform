@@ -10,7 +10,7 @@ export default function Results() {
 
   useEffect(() => {
     // 🌟 Home se password verify ho chuka hai, isliye direct results fetch karenge
-    axios.get(`http://localhost:5000/api/competitions/${id}`)
+    axios.get(`https://like-india-voting-platform.onrender.com/api/competitions/${id}`)
       .then(res => {
         setCompetition(res.data);
         setLoading(false);

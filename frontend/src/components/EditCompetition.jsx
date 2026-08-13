@@ -9,7 +9,7 @@ export default function EditCompetition() {
   const [participants, setParticipants] = useState([]);
 
   useEffect(() => {
-    axios.get(`http://localhost:5000/api/edit-competition/${id}`)
+    axios.get(`https://like-india-voting-platform.onrender.com/api/edit-competition/${id}`)
       .then(res => {
         setCompetitionName(res.data.name);
         setParticipants(res.data.participants);
@@ -46,7 +46,7 @@ export default function EditCompetition() {
     });
 
     try {
-      await axios.post(`http://localhost:5000/api/edit-competition/${id}`, formData, {
+      await axios.post(`https://like-india-voting-platform.onrender.com/api/edit-competition/${id}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       alert('✅ Participants updated successfully!');

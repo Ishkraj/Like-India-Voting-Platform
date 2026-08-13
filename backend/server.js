@@ -131,7 +131,7 @@ app.post('/api/add-competition', upload.any(), async (req, res) => {
       participantsData.push({
         name,
         details,
-        image: `http://localhost:5000${imagePath}` 
+        image: imagePath 
       });
     }
 
