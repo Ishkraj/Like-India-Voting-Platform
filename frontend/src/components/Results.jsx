@@ -65,7 +65,7 @@ export default function Results() {
                   #{index + 1}
                 </div>
 
-                <img src={p.image} alt={p.name} className="w-24 h-24 rounded-full object-cover shadow-md mb-4 border-4 border-white"/>
+                <img src={`https://like-india-voting-platform.onrender.com${p.image}`} alt={p.name} className="w-24 h-24 rounded-full object-cover shadow-md mb-4 border-4 border-white"/>
                 <h3 className="font-extrabold text-xl text-gray-800">{p.name}</h3>
                 <p className="text-sm text-gray-500 font-medium mb-4">{p.details}</p>
                 

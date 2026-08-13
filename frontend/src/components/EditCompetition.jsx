@@ -87,7 +87,7 @@ export default function EditCompetition() {
               />
               <div className="flex items-center gap-4">
                 {typeof p.image === 'string' && p.image && (
-                  <img src={p.image} alt="preview" className="w-12 h-12 object-cover rounded-full" />
+                  <img src={`https://like-india-voting-platform.onrender.com${p.image}`} alt="preview" className="w-12 h-12 object-cover rounded-full" />
                 )}
                 <input 
                   type="file" 

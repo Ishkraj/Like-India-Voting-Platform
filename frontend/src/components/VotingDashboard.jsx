@@ -104,7 +104,7 @@ export default function VotingDashboard() {
                 onClick={() => handleTap(participant)}
                 className="bg-white rounded-xl shadow-md overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-200 border-b-4 border-blue-900 flex flex-col justify-between active:scale-95"
               >
-                <img src={participant.image} alt={participant.name} className="w-full h-28 object-cover"/>
+                <img src={`https://like-india-voting-platform.onrender.com${participant.image}`} alt={participant.name} className="w-full h-28 object-cover"/>
                 <div className="p-2">
                   <h3 className="text-sm font-extrabold text-gray-800 truncate">{participant.name}</h3>
                   <p className="text-gray-500 text-xs truncate">{participant.details}</p>
