@@ -42,7 +42,7 @@ export default function CreateCompetition() {
     formData.append('competitionName', finalName);
     formData.append('numParticipants', numParticipants);
     // userId add kar lena agar state me hai, example ke liye placeholder hai
-    formData.append('userId', 'USER_ID_HERE'); 
+    formData.append('userId', localStorage.getItem('userId'));
 
     participants.forEach((p, i) => {
       formData.append(`name_${i}`, p.name);
