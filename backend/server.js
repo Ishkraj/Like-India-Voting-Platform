@@ -22,7 +22,9 @@ mongoose.connect(process.env.MONGO_URI)
 
 // --- NODEMAILER SETUP ---
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: process.env.EMAIL_PORT || 587,
+  secure: process.env.EMAIL_PORT == 465,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
@@ -216,7 +218,7 @@ app.post('/api/vote', async (req, res) => {
   }
 });
 
-// 7. End Voting Route (Ab ye direct close kar dega kyunકી frontend se login password verify hokar aa raha hai)
+// 7. End Voting Route
 app.post('/api/end-voting/:id', async (req, res) => {
   try {
     const comp = await Competition.findById(req.params.id);
@@ -272,7 +274,7 @@ app.post('/api/edit-competition/:id', upload.any(), async (req, res) => {
   }
 });
 
-// Admin Password Verification Route (For Results)
+// Admin Password Verification Route
 app.post('/api/verify-admin', (req, res) => {
   const { password } = req.body;
   if (password === process.env.ADMIN_PASSWORD) {
@@ -281,7 +283,7 @@ app.post('/api/verify-admin', (req, res) => {
   res.status(401).json({ message: 'Incorrect Admin Password!' });
 });
 
-// User Login Password Verification Route (For Edit, End Voting, Open Voting)
+// User Login Password Verification Route
 app.post('/api/verify-user-password', async (req, res) => {
   try {
     const { userId, password } = req.body;
