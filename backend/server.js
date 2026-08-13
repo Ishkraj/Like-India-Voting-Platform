@@ -59,6 +59,7 @@ app.post('/api/signup', async (req, res) => {
 
     if (user) {
       user.password = hashedPassword;
+      user.email = email; // Ensure email update ho jaye
       user.otp = otp;
       user.otpExpires = otpExpires;
     } else {
@@ -66,16 +67,18 @@ app.post('/api/signup', async (req, res) => {
     }
     await user.save();
 
+    // Fix: user.email use kiya hai taaki undefined error na aaye
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
-      to: email,
+      to: user.email,
       subject: 'Verify your Like India Account',
       text: `Jai Hind! Your OTP for signup is ${otp}. Valid for 5 minutes.`
     });
 
     res.status(200).json({ message: 'OTP sent to email. Please verify.' });
   } catch (error) {
-    res.status(500).json({ message: 'Error in signup', error });
+    console.error("Signup Error:", error); // Logs me error dikhega
+    res.status(500).json({ message: 'Error in signup', error: error.message });
   }
 });
 
