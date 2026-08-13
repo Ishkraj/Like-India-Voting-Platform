@@ -1,67 +1,66 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
 
 export default function CreateCompetition() {
   const [competitionName, setCompetitionName] = useState('');
-  const [numParticipants, setNumParticipants] = useState(1);
+  const [isCustom, setIsCustom] = useState(false);
+  const [customName, setCustomName] = useState('');
+  const [numParticipants, setNumParticipants] = useState(0);
   const [participants, setParticipants] = useState([]);
-  const navigate = useNavigate();
 
   // Handle number of participants change
   const handleNumChange = (e) => {
     const count = parseInt(e.target.value) || 0;
     setNumParticipants(count);
-    // Create empty slots for participants
-    const newParticipants = Array.from({ length: count }, () => ({ name: '', details: '', image: null }));
+    
+    // Create empty participant template array
+    const newParticipants = Array.from({ length: count }, () => ({
+      name: '',
+      details: '',
+      image: null
+    }));
     setParticipants(newParticipants);
   };
 
-  // Handle individual participant input
   const handleParticipantChange = (index, field, value) => {
     const updated = [...participants];
     updated[index][field] = value;
     setParticipants(updated);
   };
 
-  // Handle Image Selection
   const handleImageChange = (index, e) => {
-    const file = e.target.files[0];
     const updated = [...participants];
-    updated[index].image = file;
+    updated[index].image = e.target.files[0];
     setParticipants(updated);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const userId = localStorage.getItem('userId'); // Login user ki ID nikaal rahe hain
-    if (!userId) {
-      alert("Please login first!");
-      return navigate('/');
-    }
+    const finalName = isCustom ? customName : competitionName;
 
     const formData = new FormData();
-    formData.append('competitionName', competitionName);
+    formData.append('competitionName', finalName);
     formData.append('numParticipants', numParticipants);
-    formData.append('userId', userId); // 👉 Ye rahi nayi line jo userId bhejegi
-    
-    participants.forEach((p, index) => {
-      formData.append(`name_${index}`, p.name);
-      formData.append(`details_${index}`, p.details);
-      if (p.image) formData.append(`image_${index}`, p.image); 
+    // userId add kar lena agar state me hai, example ke liye placeholder hai
+    formData.append('userId', 'USER_ID_HERE'); 
+
+    participants.forEach((p, i) => {
+      formData.append(`name_${i}`, p.name);
+      formData.append(`details_${i}`, p.details);
+      if (p.image) {
+        formData.append(`image_${i}`, p.image);
+      }
     });
 
     try {
-      await axios.post('https://like-india-voting-platform.onrender.com/api/add-competition', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      alert('Competition and Participants added successfully! Jai Hind!');
-      navigate('/home'); 
-    } catch (error) {
-      console.error(error);
-      alert('Error adding competition');
+      await axios.post('https://like-india-voting-platform.onrender.com/api/add-competition', formData);
+      alert('Competition created successfully!');
+    } catch (err) {
+      console.error(err);
+      alert('Error creating competition');
     }
   };
+
   return (
     <div className="min-h-screen bg-orange-50 p-6 relative">
       <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-orange-500 via-white to-green-600"></div>
@@ -78,13 +77,36 @@ export default function CreateCompetition() {
             <div className="flex flex-col gap-4">
               <select 
                 className="p-3 border rounded-lg focus:border-orange-500 focus:outline-none font-medium"
-                onChange={(e) => setCompetitionName(e.target.value)} required
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "Custom") {
+                    setIsCustom(true);
+                    setCompetitionName('');
+                  } else {
+                    setIsCustom(false);
+                    setCompetitionName(val);
+                  }
+                }} 
+                required
               >
                 <option value="">Select Competition Type...</option>
-                <option value="Dance">Dance - Move for freedom</option>
-                <option value="Music">Music (Singing) - Let your voice unite</option>
-                <option value="Speech">Speech - Speak for change</option>
+                <option value="Dance - Move for freedom">Dance - Move for freedom</option>
+                <option value="Music (Singing) - Let your voice unite">Music (Singing) - Let your voice unite</option>
+                <option value="Speech - Speak for change">Speech - Speak for change</option>
+                <option value="Custom">✨ Other / Custom Event</option>
               </select>
+
+              {/* Custom Event Input Field (Shows only if Custom is selected) */}
+              {isCustom && (
+                <input 
+                  type="text"
+                  placeholder="Enter Custom Competition Name..."
+                  value={customName}
+                  onChange={(e) => setCustomName(e.target.value)}
+                  className="p-3 border rounded-lg focus:border-orange-500 focus:outline-none font-medium"
+                  required
+                />
+              )}
 
               <input 
                 type="number" min="1" placeholder="Number of Participants" required
