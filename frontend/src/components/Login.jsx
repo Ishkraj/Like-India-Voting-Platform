@@ -12,6 +12,7 @@ export default function Login() {
     try {
       const res = await axios.post('https://like-india-voting-platform.onrender.com/api/login', { phoneNumber, password });
       localStorage.setItem('userId', res.data.userId);
+      localStorage.setItem('loginExpiry', Date.now() + 24 * 60 * 60 * 1000);
       navigate('/home');
     } catch (err) {
       alert(err.response?.data?.message || 'Login failed');
