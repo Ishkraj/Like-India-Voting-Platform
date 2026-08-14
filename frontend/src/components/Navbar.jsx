@@ -4,7 +4,6 @@ import { Link, useNavigate } from 'react-router-dom';
 export default function Navbar() {
   const navigate = useNavigate();
   const userId = localStorage.getItem('userId');
-  const username = localStorage.getItem('username');
 
   // ✅ 24-Hour Session Expiry Check
   useEffect(() => {
@@ -13,7 +12,7 @@ export default function Navbar() {
     // Agar expiry time set hai aur current time usse aage nikal gaya (24 hrs over)
     if (expiryTime && Date.now() > parseInt(expiryTime)) {
       localStorage.removeItem('userId');
-      localStorage.removeItem('username');
+      localStorage.removeItem('name');
       localStorage.removeItem('loginExpiry');
       navigate('/login');
     }
@@ -21,7 +20,7 @@ export default function Navbar() {
 
   const handleLogout = () => {
     localStorage.removeItem('userId');
-    localStorage.removeItem('username');
+    localStorage.removeItem('name');
     localStorage.removeItem('loginExpiry'); // ✅ Logout pe isko bhi clean kar do
     navigate('/login');
   };

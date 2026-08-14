@@ -6,13 +6,13 @@ export default function VotingDashboard() {
   const { id } = useParams();
   const [competitionName, setCompetitionName] = useState('Loading...');
   const [unranked, setUnranked] = useState([]);
-  const [ratedParticipants, setRatedParticipants] = useState([]); // Yahan ab stars save honge
+  const [ratedParticipants, setRatedParticipants] = useState([]); 
   const [totalVotes, setTotalVotes] = useState(0); 
   
   // Custom Modal States
   const [modalMessage, setModalMessage] = useState(null);
-  const [activeParticipant, setActiveParticipant] = useState(null); // Jispar tap kiya hai
-  const [currentStars, setCurrentStars] = useState(0); // 1 se 6 stars
+  const [activeParticipant, setActiveParticipant] = useState(null); 
+  const [currentStars, setCurrentStars] = useState(0); 
   
   const navigate = useNavigate();
 
@@ -26,8 +26,17 @@ export default function VotingDashboard() {
       setCompetitionName(res.data.name);
       setTotalVotes(res.data.totalVotes || 0);
 
-      // Local storage check for resuming voting
-      const savedData = localStorage.getItem(`votingState_${id}`);
+      const currentUserId = localStorage.getItem('userId');
+
+      // 🌟 CHECK: Agar current user pehle hi 'votedBy' list me hai, toh seedha block karo!
+      if (res.data.votedBy && res.data.votedBy.includes(currentUserId)) {
+        setModalMessage("⚠️ You have already voted in this competition! Returning to home.");
+        localStorage.removeItem(`votingState_${id}`); // Clean old state
+        return;
+      }
+
+      // Local storage check for resuming voting (isolated per user/competition)
+      const savedData = localStorage.getItem(`votingState_${id}_${currentUserId}`);
       if (savedData) {
         const { savedRated, savedUnranked } = JSON.parse(savedData);
         setRatedParticipants(savedRated || []);
@@ -44,7 +53,7 @@ export default function VotingDashboard() {
   // 1. Participant par tap karne par modal kholna
   const handleTap = (participant) => {
     setActiveParticipant(participant);
-    setCurrentStars(0); // Reset stars for new participant
+    setCurrentStars(0); 
   };
 
   // 2. Modal me stars save karna aur participant ko list se hatana
@@ -60,28 +69,14 @@ export default function VotingDashboard() {
     setUnranked(newUnranked);
     setRatedParticipants(newRated);
     
-    // Save to local storage
-    localStorage.setItem(`votingState_${id}`, JSON.stringify({ savedRated: newRated, savedUnranked: newUnranked }));
+    // Save to local storage with userId mapping so it never mixes up between users
+    const currentUserId = localStorage.getItem('userId');
+    localStorage.setItem(`votingState_${id}_${currentUserId}`, JSON.stringify({ savedRated: newRated, savedUnranked: newUnranked }));
     
-    // Modal band karo
     setActiveParticipant(null);
   };
 
-  // 3. Galti se rate kar diya toh Undo karna
-  const handleUndo = () => {
-    if (ratedParticipants.length === 0) return; 
-    
-    const lastRated = ratedParticipants[ratedParticipants.length - 1]; 
-    const newRated = ratedParticipants.slice(0, -1); 
-    
-    // Original participant data dhundho (taaki wapas list me dikha sake)
-    // Hum backend dobara hit nahi kar rahe, bas assumed state use kar rahe hain
-    // For exact data, humein pura object store karna chahiye, but this is a simple fallback
-    alert("Undo feature is currently clearing the last save. Please refresh to start over if needed.");
-    // Ideal undo logic requires storing full participant objects in ratedParticipants too.
-  };
-
-  // 4. Sabko rate karne ke baad final submit karna
+  // 3. Sabko rate karne ke baad final submit karna
   const submitVote = async () => {
     if (unranked.length > 0) {
       setModalMessage("⚠️ Please rate all participants before submitting!");
@@ -91,7 +86,6 @@ export default function VotingDashboard() {
     try {
       const currentUserId = localStorage.getItem('userId');
 
-      // Ab hum backend ko { participantId, stars } ka array bhej rahe hain
       await axios.post('https://like-india-voting-platform.onrender.com/api/vote', {
         competitionId: id,
         userId: currentUserId,
@@ -101,7 +95,7 @@ export default function VotingDashboard() {
       setModalMessage("🎉 All Ratings Submitted Successfully!");
       
       setRatedParticipants([]); 
-      localStorage.removeItem(`votingState_${id}`); 
+      localStorage.removeItem(`votingState_${id}_${currentUserId}`); 
       await fetchCompetitionData(); 
       
     } catch (error) {
@@ -125,7 +119,6 @@ export default function VotingDashboard() {
       
       <div className="max-w-4xl mx-auto flex flex-col gap-6">
         
-        {/* Agar participants bache hain rate karne ke liye */}
         {unranked.length > 0 ? (
           <div>
             <div className="flex justify-between items-center mb-3 border-b-2 border-orange-500 pb-1">
@@ -145,7 +138,6 @@ export default function VotingDashboard() {
                   <img src={`https://like-india-voting-platform.onrender.com${participant.image}`} alt={participant.name} className="w-full h-32 object-cover"/>
                   <div className="p-3 text-center">
                     <h3 className="text-base font-extrabold text-gray-900 truncate">{participant.name}</h3>
-                    {/* Yahan details ko "Act" banakar dikha diya */}
                     <p className="text-orange-600 text-xs font-bold mt-1 uppercase tracking-wider">Act: {participant.details}</p>
                   </div>
                 </div>
@@ -153,7 +145,6 @@ export default function VotingDashboard() {
             </div>
           </div>
         ) : (
-          /* Jab sabko rate kar diya ho */
           <div className="bg-white p-8 shadow-2xl rounded-2xl border-t-8 border-t-green-600 text-center mt-10">
             <div className="text-5xl mb-4">🌟</div>
             <h2 className="text-2xl font-extrabold text-blue-900 mb-2">All Participants Rated!</h2>
@@ -184,7 +175,6 @@ export default function VotingDashboard() {
             
             <h4 className="font-bold text-gray-500 mb-2">Give 1 to 6 Stars</h4>
             
-            {/* Stars Row */}
             <div className="flex justify-center gap-2 mb-8 flex-wrap">
               {[1, 2, 3, 4, 5, 6].map((star) => (
                 <button
@@ -231,11 +221,8 @@ export default function VotingDashboard() {
             </p>
             <button 
               onClick={() => {
-                const msg = modalMessage;
                 setModalMessage(null);
-                if (msg && (msg.includes("This is not your competition") || msg.includes("Successfully"))) {
-                  navigate('/home');
-                }
+                navigate('/home');
               }}
               className="bg-blue-900 hover:bg-blue-800 text-white w-full py-2.5 rounded-xl font-bold text-base shadow-md transition-all active:scale-95"
             >

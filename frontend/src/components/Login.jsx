@@ -10,9 +10,16 @@ export default function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
+      // 🌟 Naya login hone se pehle purana data saaf kar do taaki ID mix na ho
+      localStorage.removeItem('userId');
+      localStorage.removeItem('loginExpiry');
+
       const res = await axios.post('https://like-india-voting-platform.onrender.com/api/login', { phoneNumber, password });
+      
+      // Ab naye user ki sahi ID save hogi
       localStorage.setItem('userId', res.data.userId);
       localStorage.setItem('loginExpiry', Date.now() + 24 * 60 * 60 * 1000);
+      
       navigate('/home');
     } catch (err) {
       alert(err.response?.data?.message || 'Login failed');
