@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 
@@ -7,6 +7,15 @@ export default function Signup() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
+
+  // 🌟 CHECK: Agar user pehle se logged in hai, toh direct Home pe bhejo
+  useEffect(() => {
+    const userId = localStorage.getItem('userId');
+    const expiryTime = localStorage.getItem('loginExpiry');
+    if (userId && expiryTime && Date.now() < parseInt(expiryTime)) {
+      navigate('/home');
+    }
+  }, [navigate]);
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -19,9 +28,22 @@ export default function Signup() {
     }
 
     try {
+      // Purana data saaf kar do taaki conflict na ho
+      localStorage.removeItem('userId');
+      localStorage.removeItem('loginExpiry');
+
       const res = await axios.post('https://like-india-voting-platform.onrender.com/api/signup', { name, phoneNumber, password });
-      alert(res.data.message);
-      navigate('/login'); 
+      
+      // 🌟 Auto-Login: Backend se mili user ID save karo aur Home pe bhejo
+      if (res.data.userId) {
+        localStorage.setItem('userId', res.data.userId);
+        localStorage.setItem('loginExpiry', Date.now() + 24 * 60 * 60 * 1000); // 24 hours expiry
+        navigate('/home');
+      } else {
+        // Agar backend se ID nahi aayi (fallback), toh login pe bhejo
+        alert(res.data.message);
+        navigate('/login');
+      }
     } catch (err) {
       alert(err.response?.data?.message || 'Signup failed');
     }
@@ -69,7 +91,7 @@ export default function Signup() {
         
         <input 
           type="password" 
-          placeholder="Password" 
+          placeholder="Create your new Password" 
           required 
           value={password} 
           onChange={(e) => setPassword(e.target.value)} 
@@ -87,7 +109,7 @@ export default function Signup() {
         </div>
       </form>
 
-      {/* Jai Hind Footer Note (Consistent with Login) */}
+      {/* Jai Hind Footer Note */}
       <div className="absolute bottom-8 left-0 w-full text-center">
         <p className="text-blue-900 font-extrabold text-sm tracking-widest">
           ★★★ JAI HIND! 🇮🇳 JAI BHARAT! ★★★

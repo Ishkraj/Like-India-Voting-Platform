@@ -58,7 +58,13 @@ app.post('/api/signup', async (req, res) => {
     user = new User({ name, phoneNumber, password: hashedPassword });
     await user.save();
 
-    res.status(201).json({ message: 'Registration successful! Please login.' });
+    // 🌟 YAHAN UPDATE HUA HAI: Ab hum userId aur name bhi bhej rahe hain taaki direct login ho sake
+    res.status(201).json({ 
+      message: 'Registration successful!', 
+      userId: user._id,
+      name: user.name 
+    });
+    
   } catch (error) {
     console.error("Signup Error:", error);
     res.status(500).json({ message: 'Error in signup', error: error.message });
