@@ -150,44 +150,58 @@ app.get('/api/competitions/:id', async (req, res) => {
   }
 });
 
-// 6. Submit Vote (1 User = 1 Vote) - UPDATE HUA HAI YAHAN
+// 6. Submit Vote (1 User = 1 Vote) - 🔥 CONCURRENCY FIX 🔥
 app.post('/api/vote', async (req, res) => {
-  // Frontend se ab 'ratings' aayega, jisme [{participantId, stars}, ...] hoga
   const { competitionId, ratings, userId } = req.body; 
 
   try {
+    // 1. Pehle basic checks kar lete hain
     const comp = await Competition.findById(competitionId);
     if (!comp) return res.status(404).json({ message: 'Competition not found' });
+    if (comp.isActive === false) return res.status(400).json({ message: 'Voting is currently closed by the admin!' });
+    if (comp.votedBy.includes(userId)) return res.status(400).json({ message: 'You have already voted!' });
 
-    if (comp.isActive === false) {
-      return res.status(400).json({ message: 'Voting is currently closed by the admin!' });
-    }
+    // 2. ATOMIC UPDATE LOGIC (Multiple bando ko ek sath handle karne ke liye)
+    let incQuery = { totalVotes: 1 };
+    let filters = [];
 
-    // CHECK: Kya user ne pehle vote diya hai?
-    if (comp.votedBy.includes(userId)) {
-      return res.status(400).json({ message: 'You have already voted in this competition! Now wait for the result announcement.' });
-    }
-
-    // Naya Rating Logic: Har participant ko diye gaye stars add karna
-    ratings.forEach((ratingObj) => {
-      const { participantId, stars } = ratingObj;
-      const participant = comp.participants.id(participantId);
-      if (participant) {
-        participant.totalScore += stars; // Star points add kar diye
-      }
+    // Har participant ke liye dynamically filter aur increment query banana
+    ratings.forEach((ratingObj, index) => {
+      incQuery[`participants.$[elem${index}].totalScore`] = ratingObj.stars;
+      // Array Filters ke liye ID ko MongoDB ObjectId me convert karna zaroori hai
+      filters.push({ [`elem${index}._id`]: new mongoose.Types.ObjectId(ratingObj.participantId) });
     });
 
-    comp.totalVotes = (comp.totalVotes || 0) + 1;
-    comp.votedBy.push(userId); // Vote hote hi user ka ID list me save ho jayega
-    await comp.save();
+    const updateOptions = { new: true };
+    if (filters.length > 0) {
+      updateOptions.arrayFilters = filters;
+    }
 
-    res.status(200).json({ message: 'Vote recorded successfully!', totalVotes: comp.totalVotes });
+    // 3. findOneAndUpdate seedha database me ek-ek karke process (queue) hota hai, bina VersionError ke!
+    const updatedComp = await Competition.findOneAndUpdate(
+      { 
+        _id: competitionId, 
+        isActive: true, 
+        votedBy: { $ne: userId } // Strict atomic check ki user ne pehle vote na diya ho
+      },
+      {
+        $inc: incQuery,             // Har participant ke Stars aur total votes ek sath jodo
+        $push: { votedBy: userId }  // User ka ID voted list me ek sath daalo
+      },
+      updateOptions
+    );
+
+    // Agar updatedComp nahi mila, toh iska matlab user ne same time pe multiple tap kar diye the
+    if (!updatedComp) {
+      return res.status(400).json({ message: 'Vote failed or you already voted. Please try again.' });
+    }
+
+    res.status(200).json({ message: 'Vote recorded successfully!', totalVotes: updatedComp.totalVotes });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Voting failed', error });
+    console.error("Concurrency Voting Error:", error);
+    res.status(500).json({ message: 'Voting failed', error: error.message });
   }
 });
-
 // 7. End Voting Route
 app.post('/api/end-voting/:id', async (req, res) => {
   try {
