@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 export default function Home() {
   const [competitions, setCompetitions] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState(''); // 'create', 'edit', 'end', 'vote', ya 'results'
+  const [modalType, setModalType] = useState(''); 
   const [selectedCompId, setSelectedCompId] = useState(null);
   const [inputPassword, setInputPassword] = useState('');
   const navigate = useNavigate();
@@ -16,7 +16,6 @@ export default function Home() {
 
   const fetchCompetitions = async () => {
     try {
-      // Bina kisi user filter ke saare competitions fetch karega
       const res = await axios.get(`https://like-india-voting-platform.onrender.com/api/competitions`);
       setCompetitions(res.data);
     } catch (err) {
@@ -31,22 +30,18 @@ export default function Home() {
     setModalOpen(true);
   };
 
-  // Modal Submit Action
   const handleModalSubmit = async (e) => {
     e.preventDefault();
     if (!inputPassword) return;
 
-    // Check if it's 'open voting' (moderator pass) or anything else (admin pass)
     const actionType = modalType === 'vote' ? 'open' : 'admin';
 
     try {
-      // 1. Backend se password verify karo
       await axios.post(`https://like-india-voting-platform.onrender.com/api/verify-password`, { 
         action: actionType, 
         password: inputPassword 
       });
 
-      // 2. Password sahi hone par aage ka kaam karo
       if (modalType === 'create') {
         setModalOpen(false);
         navigate('/create');
@@ -137,7 +132,6 @@ export default function Home() {
         </button>
       </div>
 
-      {/* 🌟 CUSTOM MODAL FOR PASSWORD VERIFICATION */}
       {modalOpen && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border-t-8 border-orange-500">
