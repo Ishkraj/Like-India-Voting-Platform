@@ -165,7 +165,7 @@ app.post('/api/vote', async (req, res) => {
 
     // CHECK: Kya user ne pehle vote diya hai?
     if (comp.votedBy.includes(userId)) {
-      return res.status(400).json({ message: 'You have already voted in this competition!' });
+      return res.status(400).json({ message: 'You have already voted in this competition! Now wait for the result announcement.' });
     }
 
     const total = rankedParticipants.length;
