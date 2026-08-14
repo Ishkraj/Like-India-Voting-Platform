@@ -67,10 +67,11 @@ export default function Results() {
 
                 <img src={`https://like-india-voting-platform.onrender.com${p.image}`} alt={p.name} className="w-24 h-24 rounded-full object-cover shadow-md mb-4 border-4 border-white"/>
                 <h3 className="font-extrabold text-xl text-gray-800">{p.name}</h3>
-                <p className="text-sm text-gray-500 font-medium mb-4">{p.details}</p>
+                <p className="text-sm text-orange-600 font-bold mb-4 uppercase">Act: {p.details}</p>
                 
-                <div className="bg-blue-900 text-white px-5 py-2 rounded-full text-sm font-extrabold tracking-widest shadow-inner mt-auto">
-                  {p.totalScore} POINTS
+                {/* ✅ Yahan POINTS ki jagah STARS kar diya hai */}
+                <div className="bg-yellow-500 text-white px-5 py-2 rounded-full text-sm font-extrabold tracking-widest shadow-inner mt-auto flex items-center gap-1">
+                  ⭐ {p.totalScore} Stars
                 </div>
               </div>
             ))}

@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom'; // <-- 1. Ye add kiya
+import { useNavigate } from 'react-router-dom';
 
 export default function CreateCompetition() {
-  const navigate = useNavigate(); // <-- 2. Ye add kiya
+  const navigate = useNavigate();
   
   const [competitionName, setCompetitionName] = useState('');
-  const [isCustom, setIsCustom] = useState(false);
-  const [customName, setCustomName] = useState('');
   const [numParticipants, setNumParticipants] = useState(0);
   const [participants, setParticipants] = useState([]);
 
@@ -39,12 +37,10 @@ export default function CreateCompetition() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const finalName = isCustom ? customName : competitionName;
 
     const formData = new FormData();
-    formData.append('competitionName', finalName);
+    formData.append('competitionName', competitionName);
     formData.append('numParticipants', numParticipants);
-    // userId add kar liya hai localStorage se
     formData.append('userId', localStorage.getItem('userId'));
 
     participants.forEach((p, i) => {
@@ -58,7 +54,7 @@ export default function CreateCompetition() {
     try {
       await axios.post('https://like-india-voting-platform.onrender.com/api/add-competition', formData);
       alert('Competition created successfully!');
-      navigate('/home'); // <-- 3. Ye add kiya (ab direct home pe jayega)
+      navigate('/home'); 
     } catch (err) {
       console.error(err);
       alert('Error creating competition');
@@ -79,38 +75,16 @@ export default function CreateCompetition() {
           <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
             <h2 className="font-bold text-lg text-green-700 mb-3">1. Competition Info</h2>
             <div className="flex flex-col gap-4">
-              <select 
+              
+              {/* Competition Name Direct Input */}
+              <input 
+                type="text"
+                placeholder="Enter Competition Name (e.g., Annual Talent Show)"
+                value={competitionName}
+                onChange={(e) => setCompetitionName(e.target.value)}
                 className="p-3 border rounded-lg focus:border-orange-500 focus:outline-none font-medium"
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (val === "Custom") {
-                    setIsCustom(true);
-                    setCompetitionName('');
-                  } else {
-                    setIsCustom(false);
-                    setCompetitionName(val);
-                  }
-                }} 
                 required
-              >
-                <option value="">Select Competition Type...</option>
-                <option value="Dance - Move for freedom">Dance - Move for freedom</option>
-                <option value="Music (Singing) - Let your voice unite">Music (Singing) - Let your voice unite</option>
-                <option value="Speech - Speak for change">Speech - Speak for change</option>
-                <option value="Custom">✨ Other / Custom Event</option>
-              </select>
-
-              {/* Custom Event Input Field (Shows only if Custom is selected) */}
-              {isCustom && (
-                <input 
-                  type="text"
-                  placeholder="Enter Custom Competition Name..."
-                  value={customName}
-                  onChange={(e) => setCustomName(e.target.value)}
-                  className="p-3 border rounded-lg focus:border-orange-500 focus:outline-none font-medium"
-                  required
-                />
-              )}
+              />
 
               <input 
                 type="number" min="1" placeholder="Number of Participants" required
@@ -137,7 +111,7 @@ export default function CreateCompetition() {
                     />
                     
                     <input 
-                      type="text" placeholder="Theme / Act Details (e.g., Classical, Hip-Hop)" required
+                      type="text" placeholder="Act / Performance Type (e.g., Dance, Music, Speech)" required
                       className="p-2 border rounded focus:border-green-500 outline-none"
                       onChange={(e) => handleParticipantChange(index, 'details', e.target.value)}
                     />

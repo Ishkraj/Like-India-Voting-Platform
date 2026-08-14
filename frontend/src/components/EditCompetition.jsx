@@ -71,28 +71,29 @@ export default function EditCompetition() {
               <span className="font-bold text-blue-900">Participant #{index + 1}</span>
               <input 
                 type="text" 
-                placeholder="Participant Name" 
+                placeholder="Name or Group Name" 
                 value={p.name} 
                 onChange={(e) => handleParticipantChange(index, 'name', e.target.value)}
                 required
-                className="border p-2 rounded-lg"
+                className="border p-2 rounded-lg outline-none focus:border-blue-900"
               />
               <input 
                 type="text" 
-                placeholder="Details (e.g. Hip Hop / City)" 
+                placeholder="Act / Performance Type (e.g., Dance, Music, Speech)" 
                 value={p.details} 
                 onChange={(e) => handleParticipantChange(index, 'details', e.target.value)}
                 required
-                className="border p-2 rounded-lg"
+                className="border p-2 rounded-lg outline-none focus:border-blue-900"
               />
               <div className="flex items-center gap-4">
                 {typeof p.image === 'string' && p.image && (
-                  <img src={`https://like-india-voting-platform.onrender.com${p.image}`} alt="preview" className="w-12 h-12 object-cover rounded-full" />
+                  <img src={`https://like-india-voting-platform.onrender.com${p.image}`} alt="preview" className="w-12 h-12 object-cover rounded-full border" />
                 )}
                 <input 
                   type="file" 
+                  accept="image/*"
                   onChange={(e) => handleImageChange(index, e.target.files[0])}
-                  className="text-sm"
+                  className="text-sm file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                 />
               </div>
             </div>
@@ -101,7 +102,7 @@ export default function EditCompetition() {
           <button 
             type="button" 
             onClick={addMoreParticipant}
-            className="bg-green-600 text-white py-2 rounded-lg font-bold hover:bg-green-700 transition"
+            className="bg-green-600 text-white py-2.5 rounded-lg font-bold hover:bg-green-700 transition shadow"
           >
             + Add On-Spot Participant
           </button>

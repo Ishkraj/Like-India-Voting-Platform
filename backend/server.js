@@ -22,9 +22,9 @@ mongoose.connect(process.env.MONGO_URI)
 
 // --- NODEMAILER SETUP ---
 const transporter = nodemailer.createTransport({
-  host: 'smtp-relay.brevo.com', // Gmail hata kar Brevo laga diya
-  port: 2525, // Render ka bypass port
-  secure: false, // 2525 ke liye false hota hai
+  host: 'smtp-relay.brevo.com', 
+  port: 2525, 
+  secure: false, 
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
@@ -44,7 +44,7 @@ const upload = multer({ storage });
 
 
 // ==========================================
-//               API ROUTES
+//             API ROUTES
 // ==========================================
 
 // 1. Signup (Fast & No OTP)
@@ -128,7 +128,6 @@ app.post('/api/add-competition', upload.any(), async (req, res) => {
 // Get ALL Competitions
 app.get('/api/competitions', async (req, res) => {
   try {
-    // find() ke andar koi condition nahi hai, matlab sab return hoga
     const competitions = await Competition.find(); 
     res.status(200).json(competitions);
   } catch (error) {
@@ -151,9 +150,10 @@ app.get('/api/competitions/:id', async (req, res) => {
   }
 });
 
-// 6. Submit Vote (1 User = 1 Vote)
+// 6. Submit Vote (1 User = 1 Vote) - UPDATE HUA HAI YAHAN
 app.post('/api/vote', async (req, res) => {
-  const { competitionId, rankedParticipants, userId } = req.body; // Frontend se userId bhi aayega ab
+  // Frontend se ab 'ratings' aayega, jisme [{participantId, stars}, ...] hoga
+  const { competitionId, ratings, userId } = req.body; 
 
   try {
     const comp = await Competition.findById(competitionId);
@@ -168,12 +168,12 @@ app.post('/api/vote', async (req, res) => {
       return res.status(400).json({ message: 'You have already voted in this competition! Now wait for the result announcement.' });
     }
 
-    const total = rankedParticipants.length;
-    rankedParticipants.forEach((participantId, index) => {
-      const points = total - index;
+    // Naya Rating Logic: Har participant ko diye gaye stars add karna
+    ratings.forEach((ratingObj) => {
+      const { participantId, stars } = ratingObj;
       const participant = comp.participants.id(participantId);
       if (participant) {
-        participant.totalScore += points;
+        participant.totalScore += stars; // Star points add kar diye
       }
     });
 
@@ -264,14 +264,12 @@ app.post('/api/open-voting/:id', async (req, res) => {
 app.post('/api/verify-password', (req, res) => {
   const { action, password } = req.body;
   
-  // action = 'admin' (Create, Edit, End ke liye)
   if (action === 'admin') {
     if (password === process.env.ADMIN_PASSWORD) {
       return res.status(200).json({ message: 'Authorized' });
     }
   }
   
-  // action = 'open' (Open voting ke liye alag password)
   if (action === 'open') {
     if (password === process.env.MODERATOR_PASSWORD) {
       return res.status(200).json({ message: 'Authorized' });
