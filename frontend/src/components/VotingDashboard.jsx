@@ -50,6 +50,7 @@ export default function VotingDashboard() {
     // Tap karte hi phone me save ho jayega
     localStorage.setItem(`votingState_${id}`, JSON.stringify({ savedRanked: newRanked, savedUnranked: newUnranked }));
   };
+
   const handleDragEnd = (result) => {
     if (!result.destination) return;
     const items = Array.from(ranked);
@@ -61,6 +62,7 @@ export default function VotingDashboard() {
     // Drag karte hi naya order save ho jayega
     localStorage.setItem(`votingState_${id}`, JSON.stringify({ savedRanked: items, savedUnranked: unranked }));
   };
+
   const handleUndo = () => {
     if (ranked.length === 0) return; // Agar list khali hai toh kuch mat karo
     
@@ -210,7 +212,9 @@ export default function VotingDashboard() {
               onClick={() => {
                 const msg = modalMessage;
                 setModalMessage(null);
-                if (msg && msg.includes("This is not your competition")) {
+                
+                // ✅ Yahan logic update kiya hai taaki successful vote par bhi redirect ho
+                if (msg && (msg.includes("This is not your competition") || msg.includes("Successfully"))) {
                   navigate('/home');
                 }
               }}
