@@ -63,10 +63,6 @@ export default function Home() {
       } 
       else if (modalType === 'vote') {
         await axios.post(`https://like-india-voting-platform.onrender.com/api/open-voting/${selectedCompId}`);
-        
-        // ✅ Password sahi hone par browser me flag save kar diya
-        localStorage.setItem(`moderatorVerified_${selectedCompId}`, 'true');
-        
         setModalOpen(false);
         navigate(`/vote/${selectedCompId}`);
       }
@@ -102,17 +98,7 @@ export default function Home() {
               
               <div className="flex flex-col gap-3">
                 {comp.isActive ? (
-                  // ✅ Yahan logic update kiya hai taaki verified hone par direct open ho
-                  <button 
-                    onClick={() => {
-                      if (localStorage.getItem(`moderatorVerified_${comp._id}`) === 'true') {
-                        navigate(`/vote/${comp._id}`);
-                      } else {
-                        openModal('vote', comp._id);
-                      }
-                    }} 
-                    className="bg-green-600 text-white px-4 py-2 rounded font-bold hover:bg-green-700 block text-center transition w-full"
-                  >
+                  <button onClick={() => openModal('vote', comp._id)} className="bg-green-600 text-white px-4 py-2 rounded font-bold hover:bg-green-700 block text-center transition w-full">
                     Open Voting ➔
                   </button>
                 ) : (
