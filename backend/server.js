@@ -47,75 +47,44 @@ const upload = multer({ storage });
 //               API ROUTES
 // ==========================================
 
-// 1. Signup (Save user & Send OTP)
+// 1. Signup (Fast & No OTP)
 app.post('/api/signup', async (req, res) => {
-  const { username, email, password } = req.body;
+  const { name, phoneNumber, password } = req.body;
   try {
-    let user = await User.findOne({ $or: [{ email }, { username }] });
-    if (user && user.isVerified) return res.status(400).json({ message: 'User already exists' });
+    let user = await User.findOne({ phoneNumber });
+    if (user) return res.status(400).json({ message: 'Phone number already registered!' });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpires = Date.now() + 5 * 60 * 1000; 
-
-    if (user) {
-      user.password = hashedPassword;
-      user.email = email; // Ensure email update ho jaye
-      user.otp = otp;
-      user.otpExpires = otpExpires;
-    } else {
-      user = new User({ username, email, password: hashedPassword, otp, otpExpires });
-    }
+    user = new User({ name, phoneNumber, password: hashedPassword });
     await user.save();
 
-    // Fix: user.email use kiya hai taaki undefined error na aaye
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: user.email,
-      subject: 'Verify your Like India Account',
-      text: `Jai Hind! Your OTP for signup is ${otp}. Valid for 5 minutes.`
-    });
-
-    res.status(200).json({ message: 'OTP sent to email. Please verify.' });
+    res.status(201).json({ message: 'Registration successful! Please login.' });
   } catch (error) {
-    console.error("Signup Error:", error); // Logs me error dikhega
+    console.error("Signup Error:", error);
     res.status(500).json({ message: 'Error in signup', error: error.message });
   }
 });
 
-// 2. Verify Signup OTP
-app.post('/api/verify-signup', async (req, res) => {
-  const { email, otp } = req.body;
-  try {
-    const user = await User.findOne({ email });
-    if (!user || user.otp !== otp || user.otpExpires < Date.now()) {
-      return res.status(400).json({ message: 'Invalid or expired OTP' });
-    }
-    user.isVerified = true;
-    user.otp = undefined;
-    user.otpExpires = undefined;
-    await user.save();
-
-    res.status(200).json({ message: 'Account verified successfully! You can now login.' });
-  } catch (error) {
-    res.status(500).json({ message: 'Error verifying OTP', error });
-  }
-});
-
-// 3. Login
+// 2. Login (By Phone Number)
 app.post('/api/login', async (req, res) => {
-  const { username, password } = req.body;
+  const { phoneNumber, password } = req.body;
   try {
-    const user = await User.findOne({ username });
-    if (!user || !user.isVerified) {
-      return res.status(400).json({ message: 'User not found or not verified' });
+    const user = await User.findOne({ phoneNumber });
+    if (!user) {
+      return res.status(400).json({ message: 'User not found! Please register first.' });
     }
+    
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+    if (!isMatch) return res.status(400).json({ message: 'Incorrect Password!' });
 
-    res.status(200).json({ message: 'Login successful', userId: user._id, username: user.username });
+    res.status(200).json({ 
+      message: 'Login successful', 
+      userId: user._id, 
+      name: user.name 
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Error in login', error });
+    console.error("Login Error:", error);
+    res.status(500).json({ message: 'Error in login', error: error.message });
   }
 });
 
@@ -156,15 +125,11 @@ app.post('/api/add-competition', upload.any(), async (req, res) => {
 });
 
 // 5. Get Competitions
+// Get ALL Competitions
 app.get('/api/competitions', async (req, res) => {
   try {
-    const { userId } = req.query;
-    let query = {};
-    if (userId) {
-      query.createdBy = userId;
-    }
-
-    const competitions = await Competition.find(query).sort({ _id: -1 });
+    // find() ke andar koi condition nahi hai, matlab sab return hoga
+    const competitions = await Competition.find(); 
     res.status(200).json(competitions);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching competitions', error });
@@ -186,16 +151,21 @@ app.get('/api/competitions/:id', async (req, res) => {
   }
 });
 
-// 6. Submit Vote
+// 6. Submit Vote (1 User = 1 Vote)
 app.post('/api/vote', async (req, res) => {
-  const { competitionId, rankedParticipants } = req.body;
+  const { competitionId, rankedParticipants, userId } = req.body; // Frontend se userId bhi aayega ab
 
   try {
     const comp = await Competition.findById(competitionId);
     if (!comp) return res.status(404).json({ message: 'Competition not found' });
 
     if (comp.isActive === false) {
-      return res.status(400).json({ message: 'Voting has been ended by the admin!' });
+      return res.status(400).json({ message: 'Voting is currently closed by the admin!' });
+    }
+
+    // CHECK: Kya user ne pehle vote diya hai?
+    if (comp.votedBy.includes(userId)) {
+      return res.status(400).json({ message: 'You have already voted in this competition!' });
     }
 
     const total = rankedParticipants.length;
@@ -208,6 +178,7 @@ app.post('/api/vote', async (req, res) => {
     });
 
     comp.totalVotes = (comp.totalVotes || 0) + 1;
+    comp.votedBy.push(userId); // Vote hote hi user ka ID list me save ho jayega
     await comp.save();
 
     res.status(200).json({ message: 'Vote recorded successfully!', totalVotes: comp.totalVotes });
@@ -273,31 +244,41 @@ app.post('/api/edit-competition/:id', upload.any(), async (req, res) => {
   }
 });
 
-// Admin Password Verification Route
-app.post('/api/verify-admin', (req, res) => {
-  const { password } = req.body;
-  if (password === process.env.ADMIN_PASSWORD) {
-    return res.status(200).json({ message: 'Authorized' });
+// Open Voting Route (Jab Moderator/Admin voting shuru kare)
+app.post('/api/open-voting/:id', async (req, res) => {
+  try {
+    const comp = await Competition.findById(req.params.id);
+    if (!comp) return res.status(404).json({ message: 'Competition not found' });
+    
+    comp.isActive = true; 
+    await comp.save();
+    
+    res.status(200).json({ message: 'Voting opened successfully!' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error opening voting' });
   }
-  res.status(401).json({ message: 'Incorrect Admin Password!' });
 });
 
-// User Login Password Verification Route
-app.post('/api/verify-user-password', async (req, res) => {
-  try {
-    const { userId, password } = req.body;
-    const user = await User.findById(userId);
-    
-    if (!user) return res.status(404).json({ message: 'User not found!' });
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ message: 'Incorrect Password!' });
-
-    res.status(200).json({ message: 'Success' });
-  } catch (error) {
-    console.error("BACKEND ERROR:", error); 
-    res.status(500).json({ message: error.message });
+// Admin & Moderator Password Verification Route
+app.post('/api/verify-password', (req, res) => {
+  const { action, password } = req.body;
+  
+  // action = 'admin' (Create, Edit, End ke liye)
+  if (action === 'admin') {
+    if (password === process.env.ADMIN_PASSWORD) {
+      return res.status(200).json({ message: 'Authorized' });
+    }
   }
+  
+  // action = 'open' (Open voting ke liye alag password)
+  if (action === 'open') {
+    if (password === process.env.MODERATOR_PASSWORD) {
+      return res.status(200).json({ message: 'Authorized' });
+    }
+  }
+
+  res.status(401).json({ message: 'Incorrect Password!' });
 });
 
 // Results Protected Route

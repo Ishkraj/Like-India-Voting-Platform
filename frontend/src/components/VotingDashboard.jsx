@@ -20,34 +20,61 @@ export default function VotingDashboard() {
   }, [id]);
 
   const fetchCompetitionData = async () => {
-    const userId = localStorage.getItem('userId');
     try {
       const res = await axios.get(`https://like-india-voting-platform.onrender.com/api/competitions/${id}`);
-      
-      if (res.data.createdBy !== userId) {
-        setModalMessage("⚠️ Ye competition aapka nahi hai!");
-        return;
-      }
-      
       setCompetitionName(res.data.name);
-      setUnranked(res.data.participants);
       setTotalVotes(res.data.totalVotes || 0);
+
+      // Refresh hone par pehle LocalStorage check karega
+      const savedData = localStorage.getItem(`votingState_${id}`);
+      if (savedData) {
+        const { savedRanked, savedUnranked } = JSON.parse(savedData);
+        setRanked(savedRanked);
+        setUnranked(savedUnranked);
+      } else {
+        setUnranked(res.data.participants);
+        setRanked([]);
+      }
     } catch (error) {
       console.error("Error", error);
     }
   };
 
   const handleTap = (participant) => {
-    setUnranked(unranked.filter(p => p._id !== participant._id));
-    setRanked([...ranked, participant]);
+    const newUnranked = unranked.filter(p => p._id !== participant._id);
+    const newRanked = [...ranked, participant];
+    
+    setUnranked(newUnranked);
+    setRanked(newRanked);
+    
+    // Tap karte hi phone me save ho jayega
+    localStorage.setItem(`votingState_${id}`, JSON.stringify({ savedRanked: newRanked, savedUnranked: newUnranked }));
   };
-
   const handleDragEnd = (result) => {
     if (!result.destination) return;
     const items = Array.from(ranked);
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
+    
     setRanked(items);
+    
+    // Drag karte hi naya order save ho jayega
+    localStorage.setItem(`votingState_${id}`, JSON.stringify({ savedRanked: items, savedUnranked: unranked }));
+  };
+  const handleUndo = () => {
+    if (ranked.length === 0) return; // Agar list khali hai toh kuch mat karo
+    
+    // Aakhiri select kiya hua participant nikalo
+    const lastRanked = ranked[ranked.length - 1]; 
+    const newRanked = ranked.slice(0, -1); 
+    const newUnranked = [...unranked, lastRanked]; 
+
+    // Dono lists update karo
+    setRanked(newRanked);
+    setUnranked(newUnranked);
+
+    // Local storage bhi update kar do
+    localStorage.setItem(`votingState_${id}`, JSON.stringify({ savedRanked: newRanked, savedUnranked: newUnranked }));
   };
 
   const submitVote = async () => {
@@ -58,17 +85,19 @@ export default function VotingDashboard() {
     
     try {
       const rankedIds = ranked.map(p => p._id);
+      const currentUserId = localStorage.getItem('userId');
 
       await axios.post('https://like-india-voting-platform.onrender.com/api/vote', {
         competitionId: id,
-        rankedParticipants: rankedIds
+        rankedParticipants: rankedIds,
+        userId: currentUserId
       });
 
-      setModalMessage("🇮🇳 Vote Submitted Successfully!\nNext person can now vote.");
+      setModalMessage("Your Vote Submitted Successfully!");
       
-      // Fixed: Passing empty array to reset ranking without breaking UI
       setRanked([]); 
-      
+      // Vote successful hone par saved history uda denge taaki agla vote fresh ho
+      localStorage.removeItem(`votingState_${id}`); 
       await fetchCompetitionData(); 
       
     } catch (error) {
@@ -116,45 +145,56 @@ export default function VotingDashboard() {
 
         {ranked.length > 0 && (
           <div className="bg-white p-4 shadow-xl rounded-xl border-t-8 border-t-green-600">
-            <h2 className="text-lg font-bold mb-3 border-b-2 border-gray-200 pb-1 text-blue-900">
+  
+          {/* Yahan Heading aur Undo button ko ek Flex row me daal diya hai */}
+          <div className="flex justify-between items-center mb-3 border-b-2 border-gray-200 pb-2">
+            <h2 className="text-lg font-bold text-blue-900 m-0">
               Your Rankings (Drag to Reorder)
             </h2>
-            
-            <DragDropContext onDragEnd={handleDragEnd}>
-              <Droppable droppableId="ranked-list">
-                {(provided) => (
-                  <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
-                    {ranked.map((participant, index) => (
-                      <Draggable key={participant._id} draggableId={participant._id} index={index}>
-                        {(provided) => (
-                          <div 
-                            ref={provided.innerRef} 
-                            {...provided.draggableProps} 
-                            {...provided.dragHandleProps}
-                            className="p-3 bg-blue-50 rounded-lg flex items-center justify-between shadow-sm border border-blue-200"
-                          >
-                            <span className="text-lg font-extrabold text-blue-900">#{index + 1}</span>
-                            <h4 className="font-bold text-gray-800 text-sm truncate px-2 flex-1">{participant.name}</h4>
-                            <span className="text-gray-400 cursor-grab text-2xl">≡</span>
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
-            </DragDropContext>
-            
-            <div className="mt-6 flex justify-center">
-              <button 
-                onClick={submitVote} 
-                className="bg-blue-900 text-white w-full py-3 rounded-xl font-bold text-base shadow-lg hover:bg-blue-800 transition-all"
-              >
-                Submit Vote & Next 🇮🇳
-              </button>
-            </div>
+        
+            <button 
+              onClick={handleUndo} 
+              className="bg-yellow-50 text-yellow-700 border border-yellow-300 px-3 py-1 rounded-lg font-bold text-sm hover:bg-yellow-100 transition-all shadow-sm active:scale-95 flex items-center gap-1"
+            >
+              ↩️ Undo
+            </button>
           </div>
+          
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId="ranked-list">
+              {(provided) => (
+                <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
+                  {ranked.map((participant, index) => (
+                    <Draggable key={participant._id} draggableId={participant._id} index={index}>
+                      {(provided) => (
+                        <div 
+                          ref={provided.innerRef} 
+                          {...provided.draggableProps} 
+                          {...provided.dragHandleProps}
+                          className="p-3 bg-blue-50 rounded-lg flex items-center justify-between shadow-sm border border-blue-200"
+                        >
+                          <span className="text-lg font-extrabold text-blue-900">#{index + 1}</span>
+                          <h4 className="font-bold text-gray-800 text-sm truncate px-2 flex-1">{participant.name}</h4>
+                          <span className="text-gray-400 cursor-grab text-2xl">≡</span>
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
+          
+          <div className="mt-6 flex justify-center">
+            <button 
+              onClick={submitVote} 
+              className="bg-blue-900 text-white w-full py-3 rounded-xl font-bold text-base shadow-lg hover:bg-blue-800 transition-all"
+            >
+              Submit Vote
+            </button>
+          </div>
+        </div>
         )}
       </div>
 
@@ -170,7 +210,7 @@ export default function VotingDashboard() {
               onClick={() => {
                 const msg = modalMessage;
                 setModalMessage(null);
-                if (msg && msg.includes("Ye competition aapka nahi hai")) {
+                if (msg && msg.includes("This is not your competition")) {
                   navigate('/home');
                 }
               }}

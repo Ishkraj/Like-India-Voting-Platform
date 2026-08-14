@@ -42,7 +42,7 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              <Link to="/" className="bg-orange-500 hover:bg-orange-600 text-white text-xs md:text-sm font-bold px-3 py-1.5 rounded-lg transition shadow">
+              <Link to="/login" className="bg-orange-500 hover:bg-orange-600 text-white text-xs md:text-sm font-bold px-3 py-1.5 rounded-lg transition shadow">
                 Login
               </Link>
               <Link to="/signup" className="bg-green-600 hover:bg-green-700 text-white text-xs md:text-sm font-bold px-3 py-1.5 rounded-lg transition shadow">

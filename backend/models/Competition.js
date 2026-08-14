@@ -1,20 +1,21 @@
 const mongoose = require('mongoose');
 
 const participantSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  details: { type: String, required: true },
-  image: { type: String, required: true },
+  name: String,
+  details: String,
+  image: String,
   totalScore: { type: Number, default: 0 }
 });
 
 const competitionSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // Nayi field
-  numParticipants: { type: Number, required: true },
+  name: String,
+  createdBy: String,
+  numParticipants: Number,
   participants: [participantSchema],
-  voters: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   totalVotes: { type: Number, default: 0 },
-  isActive: { type: Boolean, default: true }
-});
+  isActive: { type: Boolean, default: true },
+  // Naya array banaya hai jo un users ki ID store karega jinhone vote de diya hai
+  votedBy: [{ type: String }] 
+}, { timestamps: true });
 
 module.exports = mongoose.model('Competition', competitionSchema);

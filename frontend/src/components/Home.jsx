@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 export default function Home() {
   const [competitions, setCompetitions] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState(''); // 'edit', 'end', 'vote', ya 'results'
+  const [modalType, setModalType] = useState(''); // 'create', 'edit', 'end', 'vote', ya 'results'
   const [selectedCompId, setSelectedCompId] = useState(null);
   const [inputPassword, setInputPassword] = useState('');
   const navigate = useNavigate();
@@ -15,17 +15,16 @@ export default function Home() {
   }, []);
 
   const fetchCompetitions = async () => {
-    const userId = localStorage.getItem('userId');
-    if (!userId) return;
     try {
-      const res = await axios.get(`https://like-india-voting-platform.onrender.com/api/competitions?userId=${userId}`);
+      // Bina kisi user filter ke saare competitions fetch karega
+      const res = await axios.get(`https://like-india-voting-platform.onrender.com/api/competitions`);
       setCompetitions(res.data);
     } catch (err) {
       console.error(err);
     }
   };
 
-  const openModal = (type, id) => {
+  const openModal = (type, id = null) => {
     setModalType(type);
     setSelectedCompId(id);
     setInputPassword('');
@@ -37,41 +36,43 @@ export default function Home() {
     e.preventDefault();
     if (!inputPassword) return;
 
-    const userId = localStorage.getItem('userId');
+    // Check if it's 'open voting' (moderator pass) or anything else (admin pass)
+    const actionType = modalType === 'vote' ? 'open' : 'admin';
 
     try {
-      if (modalType === 'edit') {
-        await axios.post(`https://like-india-voting-platform.onrender.com/api/verify-user-password`, { userId, password: inputPassword });
+      // 1. Backend se password verify karo
+      await axios.post(`https://like-india-voting-platform.onrender.com/api/verify-password`, { 
+        action: actionType, 
+        password: inputPassword 
+      });
+
+      // 2. Password sahi hone par aage ka kaam karo
+      if (modalType === 'create') {
+        setModalOpen(false);
+        navigate('/create');
+      } 
+      else if (modalType === 'edit') {
         setModalOpen(false);
         navigate(`/edit/${selectedCompId}`);
       } 
       else if (modalType === 'end') {
-        const verifyRes = await axios.post(`https://like-india-voting-platform.onrender.com/api/verify-user-password`, { userId, password: inputPassword });
-        
-        if (verifyRes.status === 200) {
-          await axios.post(`https://like-india-voting-platform.onrender.com/api/end-voting/${selectedCompId}`);
-          
-          setModalOpen(false);
-          fetchCompetitions();
-          
-          setTimeout(() => {
-            alert("🛑 Voting has been ended successfully!");
-          }, 100);
-        }
+        await axios.post(`https://like-india-voting-platform.onrender.com/api/end-voting/${selectedCompId}`);
+        setModalOpen(false);
+        fetchCompetitions();
+        setTimeout(() => alert("🛑 Voting has been ended successfully!"), 100);
       } 
       else if (modalType === 'vote') {
-        await axios.post(`https://like-india-voting-platform.onrender.com/api/verify-user-password`, { userId, password: inputPassword });
+        await axios.post(`https://like-india-voting-platform.onrender.com/api/open-voting/${selectedCompId}`);
         setModalOpen(false);
         navigate(`/vote/${selectedCompId}`);
       }
       else if (modalType === 'results') {
-        await axios.post(`https://like-india-voting-platform.onrender.com/api/verify-admin`, { password: inputPassword });
         setModalOpen(false);
         navigate(`/results/${selectedCompId}`);
       }
     } catch (error) {
         console.error("Full Error:", error);
-        alert(error.response?.data?.message || error.message || "❌ Incorrect Password!");
+        alert(error.response?.data?.message || "❌ Incorrect Password!");
     }
   };
 
@@ -118,7 +119,6 @@ export default function Home() {
                   </button>
                 )}
                 
-                {/* View Results Button (Admin Password Protected) */}
                 <button onClick={() => openModal('results', comp._id)} className="bg-blue-900 text-white px-4 py-2 rounded font-bold hover:bg-blue-800 transition w-full">
                   🏆 View Results
                 </button>
@@ -129,9 +129,12 @@ export default function Home() {
       )}
 
       <div className="mt-12 text-center">
-        <Link to="/create" className="bg-blue-900 text-white px-8 py-4 rounded-lg font-bold text-xl shadow-lg hover:bg-blue-800 transition inline-block">
+        <button 
+          onClick={() => openModal('create')} 
+          className="bg-blue-900 text-white px-8 py-4 rounded-lg font-bold text-xl shadow-lg hover:bg-blue-800 transition inline-block"
+        >
           + Create New Competition
-        </Link>
+        </button>
       </div>
 
       {/* 🌟 CUSTOM MODAL FOR PASSWORD VERIFICATION */}
@@ -139,19 +142,20 @@ export default function Home() {
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border-t-8 border-orange-500">
             <h3 className="text-2xl font-bold text-blue-900 mb-2 text-center">
-              {modalType === 'edit' && '🔐 Enter Login Password to Edit'}
-              {modalType === 'end' && '🛑 Enter Login Password to End'}
-              {modalType === 'vote' && '🟢 Enter Login Password to Open Voting'}
+              {modalType === 'create' && '🛡️ Enter Admin Password'}
+              {modalType === 'edit' && '🛡️ Enter Admin Password to Edit'}
+              {modalType === 'end' && '🛑 Enter Admin Password to End'}
+              {modalType === 'vote' && '🟢 Enter Moderator Password'}
               {modalType === 'results' && '🛡️ Enter Admin Password for Results'}
             </h3>
             <p className="text-gray-500 text-center text-sm mb-6">
-              {modalType === 'results' ? 'Please enter the admin password to view results.' : 'Please enter your account login password to proceed.'}
+              {modalType === 'vote' ? 'Please enter the moderator password to open voting.' : 'Please enter the admin password to proceed.'}
             </p>
 
             <form onSubmit={handleModalSubmit} className="flex flex-col gap-4">
               <input 
                 type="password"
-                placeholder={modalType === 'results' ? "Admin Password" : "Login Password"}
+                placeholder="Enter Password"
                 value={inputPassword}
                 onChange={(e) => setInputPassword(e.target.value)}
                 autoFocus
