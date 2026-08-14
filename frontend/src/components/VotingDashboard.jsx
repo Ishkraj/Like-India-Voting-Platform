@@ -120,30 +120,34 @@ export default function VotingDashboard() {
       <div className="max-w-4xl mx-auto flex flex-col gap-6">
         
         {unranked.length > 0 ? (
-          <div>
-            <div className="flex justify-between items-center mb-3 border-b-2 border-orange-500 pb-1">
-              <h2 className="text-lg font-bold text-green-700">
-                Rate Participants (Tap to Vote)
-              </h2>
-              <span className="text-sm font-bold text-gray-500">{unranked.length} Left</span>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {unranked.map(participant => (
-                <div 
-                  key={participant._id} 
-                  onClick={() => handleTap(participant)}
-                  className="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer hover:shadow-2xl transition-all duration-200 border-b-4 border-blue-900 flex flex-col justify-between active:scale-95"
-                >
-                  <img src={`https://like-india-voting-platform.onrender.com${participant.image}`} alt={participant.name} className="w-full h-32 object-cover"/>
-                  <div className="p-3 text-center">
-                    <h3 className="text-base font-extrabold text-gray-900 truncate">{participant.name}</h3>
-                    <p className="text-orange-600 text-xs font-bold mt-1 uppercase tracking-wider">Act: {participant.details}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+        <div>
+          <div className="flex justify-between items-center mb-3 border-b-2 border-orange-500 pb-1">
+            <h2 className="text-lg font-bold text-green-700">
+              Rate Participants (Tap to Vote)
+            </h2>
+            <span className="text-sm font-bold text-gray-500">{unranked.length} Left</span>
           </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {unranked.map(participant => (
+              <div 
+                key={participant._id} 
+                onClick={() => handleTap(participant)}
+                className="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer hover:shadow-2xl transition-all duration-200 border-b-4 border-blue-900 flex flex-col justify-between active:scale-95 max-w-[280px] mx-auto w-full"
+              >
+                <img 
+                  src={`https://like-india-voting-platform.onrender.com${participant.image}`} 
+                  alt={participant.name} 
+                  className="w-full h-72 object-cover object-top"
+                />
+                <div className="p-4 text-center">
+                  <h3 className="text-lg font-extrabold text-gray-900 truncate">{participant.name}</h3>
+                  <p className="text-orange-600 text-sm font-bold mt-1 uppercase tracking-wider">Act: {participant.details}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
         ) : (
           <div className="bg-white p-8 shadow-2xl rounded-2xl border-t-8 border-t-green-600 text-center mt-10">
             <div className="text-5xl mb-4">🌟</div>
